@@ -24,7 +24,7 @@ from pathlib import Path
 from collections import defaultdict
 
 # Configuration
-MAX_PLAYERS_PER_TEAM = 12
+MAX_PLAYERS_PER_TEAM = 14
 INPUT_PDF = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\kampskjema-fredag-puljespill.pdf"
 INPUT_EXCEL = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\players.xlsx"
 OUTPUT_PDF = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\kampskjema-fredag-puljespill-with-players.pdf"
@@ -241,8 +241,8 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
         player_text = f"{name} {surname}"
         can.drawString(x - 5, current_y, player_text)
         current_y -= line_height
-        if current_line == 9:
-            current_y -= 2  # Extra spacing after 9 players to match pre-printed lines 
+        if current_line in [9, 11, 12]:
+            current_y -= 2  # Extra spacing after 9 and 12 players to match pre-printed lines 
         current_line += 1
     
     can.save()
@@ -334,7 +334,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
     
     print(f"\nProcessing complete!")
     print(f"  Teams processed: {processed_teams}")
-    print(f"  Teams skipped (>12 players): {len(skipped_teams)}")
+    print(f"  Teams skipped (>{MAX_PLAYERS_PER_TEAM} players): {len(skipped_teams)}")
     if skipped_teams:
         print(f"  Skipped teams: {', '.join(skipped_teams)}")
     print(f"\nOutput saved to: {output_pdf}")
