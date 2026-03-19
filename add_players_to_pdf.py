@@ -2,7 +2,7 @@
 Add player lists to tournament schedule PDF.
 
 This script reads player data from players.xlsx and adds player rosters
-to kampskjema-fredag-puljespill.pdf, creating a new PDF with players listed
+to the kampskjema PDF, creating a new PDF with players listed
 below each team name.
 
 Requirements:
@@ -17,7 +17,7 @@ import pandas as pd
 import pdfplumber
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from PyPDF2 import PdfReader, PdfWriter, Transformation
+from PyPDF2 import PdfReader, PdfWriter
 import io
 import sys
 import argparse
