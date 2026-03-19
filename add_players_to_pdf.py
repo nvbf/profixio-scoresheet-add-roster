@@ -57,7 +57,7 @@ def load_player_data(excel_path):
         try:
             number = int(float(row['Number']))  # Handle both int and float strings
         except (ValueError, TypeError):
-            print(f"Warning: Invalid number '{row['Number']}' for {row['Name']} {row['Surname']}, skipping player")
+            # Silently skip players with invalid/empty number field
             continue
             
         name = str(row['Name']).strip()
@@ -209,7 +209,7 @@ def extract_team_info_from_pdf(pdf_path):
     return teams_info
 
 
-def create_player_overlay(page_width, page_height, team_name, team_class, players, x, y, font_size=9):
+def create_player_overlay(page_width, page_height, team_name, team_class, players, x, y, font_size=8):
     """
     Create a PDF overlay with player list at specified coordinates.
     
@@ -231,14 +231,19 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     can.setFont("Helvetica", font_size)
     
     # Starting Y position (PDF coordinates are from bottom)
-    current_y = y
-    line_height = 14  # 5mm spacing to match pre-printed roster lines
+    current_y = y + 9
+    line_height = 10  # 5mm spacing to match pre-printed roster lines
     
     # Add each player
+    current_line = 1
     for number, name, surname in players[:MAX_PLAYERS_PER_TEAM]:
-        player_text = f"{number} {name} {surname}"
-        can.drawString(x, current_y, player_text)
+        can.drawString(x - 45, current_y, f"{number:>2}")
+        player_text = f"{name} {surname}"
+        can.drawString(x - 5, current_y, player_text)
         current_y -= line_height
+        if current_line == 9:
+            current_y -= 2  # Extra spacing after 9 players to match pre-printed lines 
+        current_line += 1
     
     can.save()
     packet.seek(0)
@@ -296,7 +301,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                     overlay_packet = create_player_overlay(
                         page_width, page_height,
                         team1_name, team1_class, players,
-                        team1_coords['x'], team1_coords['y']
+                        team1_coords['x'] + 2, team1_coords['y']
                     )
                     overlay_page = PdfReader(overlay_packet).pages[0]
                     page.merge_page(overlay_page)
