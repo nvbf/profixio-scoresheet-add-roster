@@ -132,7 +132,7 @@ def extract_team_info_from_pdf(pdf_path):
 
                 for i in range(1, len(top_words)):
                     # If the gap between this word and the previous one is large, it's a new team
-                    if top_words[i]['x0'] - top_words[i - 1]['x0'] > 100:
+                    if top_words[i]['x0'] - top_words[i - 1]['x1'] > 50:
                         teams.append(current_team)
                         current_team = [top_words[i]]
                     else:
@@ -198,7 +198,6 @@ def extract_team_info_from_pdf(pdf_path):
                     team1_name, team_class, team1_coords,
                     team2_name, team_class, team2_coords
                 ))
-                print(f"  Page {page_num + 1}: {team1_name} ({team_class}) vs {team2_name} ({team_class})")
 
             except Exception as e:
                 print(f"  Page {page_num + 1}: Error extracting info - {e}")
@@ -273,6 +272,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
     skipped_teams = []
     processed_teams = 0
+    pages_without_matches = []
 
     # Process each page
     for page_num in range(len(reader.pages)):
@@ -286,9 +286,14 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
             page_width = float(page.mediabox.width)
             page_height = float(page.mediabox.height)
 
+            # Track if teams were found in Excel data
+            team1_found = False
+            team2_found = False
+
             # Process team 1 (case-insensitive lookup)
             team1_lower = (team1_name.lower(), team1_class.lower())
             if team1_lower in case_map:
+                team1_found = True
                 team1_key = case_map[team1_lower]
                 players = player_data[team1_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
@@ -309,6 +314,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
             # Process team 2 (case-insensitive lookup)
             team2_lower = (team2_name.lower(), team2_class.lower())
             if team2_lower in case_map:
+                team2_found = True
                 team2_key = case_map[team2_lower]
                 players = player_data[team2_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
@@ -326,6 +332,15 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                     page.merge_page(overlay_page)
                     processed_teams += 1
 
+            # Report if not both teams were found
+            if not (team1_found and team2_found):
+                missing = []
+                if not team1_found:
+                    missing.append(f"{team1_name} ({team1_class})")
+                if not team2_found:
+                    missing.append(f"{team2_name} ({team2_class})")
+                pages_without_matches.append((page_num + 1, missing))
+
         writer.add_page(page)
 
     # Write the output PDF
@@ -335,6 +350,12 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
     print(f"\nProcessing complete!")
     print(f"  Teams processed: {processed_teams}")
     print(f"  Teams skipped (>{MAX_PLAYERS_PER_TEAM} players): {len(skipped_teams)}")
+
+    if pages_without_matches:
+        print(f"\nPages without matching teams in Excel:")
+        for page_num, missing_teams in pages_without_matches:
+            print(f"  Page {page_num}: {', '.join(missing_teams)}")
+
     print(f"\nOutput saved to: {output_pdf}")
 
 
