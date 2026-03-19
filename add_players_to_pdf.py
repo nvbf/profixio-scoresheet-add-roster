@@ -20,14 +20,12 @@ from reportlab.lib.pagesizes import A4
 from PyPDF2 import PdfReader, PdfWriter, Transformation
 import io
 import sys
+import argparse
 from pathlib import Path
 from collections import defaultdict
 
 # Configuration
 MAX_PLAYERS_PER_TEAM = 14
-INPUT_PDF = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\kampskjema-fredag-puljespill.pdf"
-INPUT_EXCEL = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\players.xlsx"
-OUTPUT_PDF = r"c:\Users\norhan\Downloads\NM U15\Kampskjema\kampskjema-fredag-puljespill-with-players.pdf"
 
 
 def load_player_data(excel_path):
@@ -342,25 +340,60 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
 def main():
     """Main execution function."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Add player lists to tournament schedule PDF',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''Examples:
+  python add_players_to_pdf.py input.pdf players.xlsx output.pdf
+  python add_players_to_pdf.py schedule.pdf roster.xlsx result.pdf
+        '''
+    )
+    parser.add_argument('input_pdf', help='Input PDF file with tournament schedule')
+    parser.add_argument('input_excel', help='Excel file with player data')
+    parser.add_argument('output_pdf', help='Output PDF file to create')
+    parser.add_argument('--max-players', type=int, default=14,
+                        help='Maximum players per team (default: 14)')
+    
+    args = parser.parse_args()
+    
+    # Update max players from arguments
+    global MAX_PLAYERS_PER_TEAM
+    MAX_PLAYERS_PER_TEAM = args.max_players
+    
     print("=" * 80)
     print("PDF Player List Generator")
     print("=" * 80)
     
+    # Convert to Path objects
+    input_pdf = Path(args.input_pdf)
+    input_excel = Path(args.input_excel)
+    output_pdf = Path(args.output_pdf)
+    
     # Check input files exist
-    if not Path(INPUT_PDF).exists():
-        print(f"ERROR: Input PDF not found: {INPUT_PDF}")
+    if not input_pdf.exists():
+        print(f"ERROR: Input PDF not found: {input_pdf}")
         sys.exit(1)
     
-    if not Path(INPUT_EXCEL).exists():
-        print(f"ERROR: Input Excel file not found: {INPUT_EXCEL}")
+    if not input_excel.exists():
+        print(f"ERROR: Input Excel file not found: {input_excel}")
         sys.exit(1)
+    
+    # If output file exists, rename it to .old
+    if output_pdf.exists():
+        old_file = output_pdf.with_suffix(output_pdf.suffix + '.old')
+        print(f"Output file exists. Renaming {output_pdf.name} to {old_file.name}")
+        # Remove .old file if it exists
+        if old_file.exists():
+            old_file.unlink()
+        output_pdf.rename(old_file)
     
     try:
         # Step 1: Load player data
-        player_data, case_map = load_player_data(INPUT_EXCEL)
+        player_data, case_map = load_player_data(str(input_excel))
         
         # Step 2: Extract team information from PDF
-        teams_info = extract_team_info_from_pdf(INPUT_PDF)
+        teams_info = extract_team_info_from_pdf(str(input_pdf))
         
         if not teams_info:
             print("\nERROR: No team information could be extracted from PDF.")
@@ -368,7 +401,7 @@ def main():
             sys.exit(1)
         
         # Step 3: Add players to PDF
-        add_players_to_pdf(INPUT_PDF, OUTPUT_PDF, player_data, case_map, teams_info)
+        add_players_to_pdf(str(input_pdf), str(output_pdf), player_data, case_map, teams_info)
         
         print("\n" + "=" * 80)
         print("SUCCESS! Check the output file and verify the results.")
