@@ -293,7 +293,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                 players = player_data[team1_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
-                        f"WARNING: {team1_name} ({team1_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
+                        f"  Page {page_num + 1}: WARNING: {team1_name} ({team1_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
                     skipped_teams.append(f"{team1_name} ({team1_class})")
                 else:
                     # Create overlay for team 1
@@ -313,7 +313,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                 players = player_data[team2_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
-                        f"WARNING: {team2_name} ({team2_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
+                        f"  Page {page_num + 1}: WARNING: {team2_name} ({team2_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
                     skipped_teams.append(f"{team2_name} ({team2_class})")
                 else:
                     # Create overlay for team 2
@@ -335,8 +335,6 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
     print(f"\nProcessing complete!")
     print(f"  Teams processed: {processed_teams}")
     print(f"  Teams skipped (>{MAX_PLAYERS_PER_TEAM} players): {len(skipped_teams)}")
-    if skipped_teams:
-        print(f"  Skipped teams: {', '.join(skipped_teams)}")
     print(f"\nOutput saved to: {output_pdf}")
 
 
