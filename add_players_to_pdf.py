@@ -183,14 +183,13 @@ def extract_team_info_from_pdf(pdf_path):
                 team2_x = teams[1][0]['x0']
 
                 # Players should start below "Nr" header
-                # Nr is at 2cm from top (≈57 points), first player row is 14 points below
                 team1_coords = {
-                    'x': team1_x,
-                    'y': page.height - 71  # 71 points from top edge (2cm + 5mm)
+                    'x': team1_x - 43,     # Adjust X to align with pre-printed "Nr" column
+                    'y': page.height - 62  # Adjust Y to align with first line of players
                 }
                 team2_coords = {
-                    'x': team2_x,
-                    'y': page.height - 71  # 71 points from top edge (2cm + 5mm)
+                    'x': team2_x - 45,     # Adjust X to align with pre-printed "Nr" column
+                    'y': page.height - 62  # Adjust Y to align with first line of players
                 }
 
                 teams_info.append((
@@ -227,19 +226,22 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     can.setFont("Helvetica", font_size)
 
     # Starting Y position (PDF coordinates are from bottom)
-    current_y = y + 9
-    line_height = 10  # 5mm spacing to match pre-printed roster lines
+    current_y = y
+    line_height = font_size + 2
 
     # Add each player
     current_line = 1
     for number, name, surname in players[:MAX_PLAYERS_PER_TEAM]:
         if number > 0:
-            can.drawString(x - 45, current_y, f"{number:>2}")
+            can.drawString(x, current_y, f"{number:>2}")
         player_text = f"{name} {surname}"
-        can.drawString(x - 5, current_y, player_text)
+        can.drawString(x + 40, current_y, player_text)
         current_y -= line_height
-        if current_line in [9, 11, 12]:
-            current_y -= 2  # Extra spacing after 9 and 12 players to match pre-printed lines
+        # Add som extra spacing after to match pre-printed lines
+        if current_line in [8, 9, 10, 11]:
+            current_y -= 1
+        if current_line in [12]:
+            current_y -= 2
         current_line += 1
 
     can.save()
@@ -305,7 +307,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                     overlay_packet = create_player_overlay(
                         page_width, page_height,
                         team1_name, team1_class, players,
-                        team1_coords['x'] + 2, team1_coords['y']
+                        team1_coords['x'], team1_coords['y']
                     )
                     overlay_page = PdfReader(overlay_packet).pages[0]
                     page.merge_page(overlay_page)
@@ -360,6 +362,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
 
 def main():
+    global MAX_PLAYERS_PER_TEAM
     """Main execution function."""
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
@@ -373,13 +376,12 @@ def main():
     parser.add_argument('input_pdf', help='Input PDF file with tournament schedule')
     parser.add_argument('input_excel', help='Excel file with player data')
     parser.add_argument('output_pdf', help='Output PDF file to create')
-    parser.add_argument('--max-players', type=int, default=14,
-                        help='Maximum players per team (default: 14)')
+    parser.add_argument('--max-players', type=int, default=MAX_PLAYERS_PER_TEAM,
+                        help=f'Maximum players per team (default: {MAX_PLAYERS_PER_TEAM})')
 
     args = parser.parse_args()
 
     # Update max players from arguments
-    global MAX_PLAYERS_PER_TEAM
     MAX_PLAYERS_PER_TEAM = args.max_players
 
     print("=" * 80)
