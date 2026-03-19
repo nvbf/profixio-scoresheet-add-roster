@@ -57,8 +57,7 @@ def load_player_data(excel_path):
         try:
             number = int(float(row['Number']))  # Handle both int and float strings
         except (ValueError, TypeError):
-            # Silently skip players with invalid/empty number field
-            continue
+            number = 0
             
         name = str(row['Name']).strip()
         surname = str(row['Surname']).strip()
@@ -237,7 +236,8 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     # Add each player
     current_line = 1
     for number, name, surname in players[:MAX_PLAYERS_PER_TEAM]:
-        can.drawString(x - 45, current_y, f"{number:>2}")
+        if number > 0:
+            can.drawString(x - 45, current_y, f"{number:>2}")
         player_text = f"{name} {surname}"
         can.drawString(x - 5, current_y, player_text)
         current_y -= line_height
