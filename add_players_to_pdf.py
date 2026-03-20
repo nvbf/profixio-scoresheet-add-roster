@@ -204,7 +204,7 @@ def extract_team_info_from_pdf(pdf_path):
     return teams_info
 
 
-def create_player_overlay(page_width, page_height, team_name, team_class, players, x, y, font_size=8):
+def create_player_overlay(page_width, page_height, team_name, team_class, players, x, y, font_size=8, team_side='left'):
     """
     Create a PDF overlay with player list at specified coordinates.
 
@@ -217,6 +217,7 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
         x: X coordinate for text start
         y: Y coordinate for text start (from bottom)
         font_size: Font size for text
+        team_side: 'left' for team 1 or 'right' for team 2 (determines white box position)
 
     Returns:
         io.BytesIO: PDF overlay as bytes
@@ -224,6 +225,29 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=(page_width, page_height))
     can.setFont("Helvetica", font_size)
+
+    # Draw white box to cover background graphics next to lines 13-14
+    line_height = font_size + 2
+    # Calculate Y position for line 13 (accounting for spacing after lines 8-12)
+    line_13_y = y - (12 * line_height) - 1 - 1 - 1 - 1 - 2  # 12 lines + extra spacing
+    box_width = 27
+    box_height = 25  # Height to cover lines 13-14
+
+    # Position box based on team side
+    if team_side == 'left':
+        # Team 1: box on the left side of roster
+        box_x = x - 36
+    else:
+        # Team 2: box on the right side of roster
+        box_x = x + 157
+
+    # Draw white filled rectangle with no border
+    can.setFillColorRGB(1, 1, 1)  # White
+    can.setStrokeColorRGB(1, 1, 1)  # White border
+    can.rect(box_x, line_13_y - box_height + line_height, box_width, box_height, fill=1, stroke=0)
+
+    # Reset color for text
+    can.setFillColorRGB(0, 0, 0)  # Black
 
     # Starting Y position (PDF coordinates are from bottom)
     current_y = y
@@ -294,45 +318,55 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
             # Process team 1 (case-insensitive lookup)
             team1_lower = (team1_name.lower(), team1_class.lower())
+            players_team1 = []
             if team1_lower in case_map:
                 team1_found = True
                 team1_key = case_map[team1_lower]
                 players = player_data[team1_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
-                        f"  Page {page_num + 1}: WARNING: {team1_name} ({team1_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
+                        f"  Page {page_num + 1}: WARNING: {team1_name} ({team1_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping player names for this team.")
                     skipped_teams.append(f"{team1_name} ({team1_class})")
+                    players_team1 = []  # Empty list, but still draw white boxes
                 else:
-                    # Create overlay for team 1
-                    overlay_packet = create_player_overlay(
-                        page_width, page_height,
-                        team1_name, team1_class, players,
-                        team1_coords['x'], team1_coords['y']
-                    )
-                    overlay_page = PdfReader(overlay_packet).pages[0]
-                    page.merge_page(overlay_page)
+                    players_team1 = players
                     processed_teams += 1
+
+            # Always create overlay for team 1 (includes white boxes even if no players)
+            overlay_packet = create_player_overlay(
+                page_width, page_height,
+                team1_name, team1_class, players_team1,
+                team1_coords['x'], team1_coords['y'],
+                team_side='left'
+            )
+            overlay_page = PdfReader(overlay_packet).pages[0]
+            page.merge_page(overlay_page)
 
             # Process team 2 (case-insensitive lookup)
             team2_lower = (team2_name.lower(), team2_class.lower())
+            players_team2 = []
             if team2_lower in case_map:
                 team2_found = True
                 team2_key = case_map[team2_lower]
                 players = player_data[team2_key]
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
-                        f"  Page {page_num + 1}: WARNING: {team2_name} ({team2_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping this team.")
+                        f"  Page {page_num + 1}: WARNING: {team2_name} ({team2_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping player names for this team.")
                     skipped_teams.append(f"{team2_name} ({team2_class})")
+                    players_team2 = []  # Empty list, but still draw white boxes
                 else:
-                    # Create overlay for team 2
-                    overlay_packet = create_player_overlay(
-                        page_width, page_height,
-                        team2_name, team2_class, players,
-                        team2_coords['x'], team2_coords['y']
-                    )
-                    overlay_page = PdfReader(overlay_packet).pages[0]
-                    page.merge_page(overlay_page)
+                    players_team2 = players
                     processed_teams += 1
+
+            # Always create overlay for team 2 (includes white boxes even if no players)
+            overlay_packet = create_player_overlay(
+                page_width, page_height,
+                team2_name, team2_class, players_team2,
+                team2_coords['x'], team2_coords['y'],
+                team_side='right'
+            )
+            overlay_page = PdfReader(overlay_packet).pages[0]
+            page.merge_page(overlay_page)
 
             # Report if not both teams were found
             if not (team1_found and team2_found):
