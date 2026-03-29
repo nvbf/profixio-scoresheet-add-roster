@@ -159,21 +159,17 @@ def extract_team_info_from_pdf(pdf_path):
                     continue
 
                 # Find class designation (GU15 or JU15)
-                class_word = None
+                team_class = None
                 for word in words:
                     if 'GU15' in word['text']:
-                        class_word = 'GU15'
+                        team_class = 'GU15'
                         break
                     elif 'JU15' in word['text']:
-                        class_word = 'JU15'
+                        team_class = 'JU15'
                         break
 
                 # Keep the class as-is (GU15 or JU15 to match Excel)
-                if class_word == 'GU15':
-                    team_class = 'GU15'
-                elif class_word == 'JU15':
-                    team_class = 'JU15'
-                else:
+                if team_class is None:
                     print(f"  Page {page_num + 1}: Could not identify class")
                     continue
 
@@ -204,15 +200,13 @@ def extract_team_info_from_pdf(pdf_path):
     return teams_info
 
 
-def create_player_overlay(page_width, page_height, team_name, team_class, players, x, y, font_size=8, team_side='left'):
+def create_player_overlay(page_width, page_height, players, x, y, font_size=8, team_side='left'):
     """
     Create a PDF overlay with player list at specified coordinates.
 
     Args:
         page_width: Width of the page
         page_height: Height of the page
-        team_name: Name of the team
-        team_class: Class (J15 or G15)
         players: List of (number, name, surname) tuples
         x: X coordinate for text start
         y: Y coordinate for text start (from bottom)
@@ -226,28 +220,7 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     can = canvas.Canvas(packet, pagesize=(page_width, page_height))
     can.setFont("Helvetica", font_size)
 
-    # Draw white box to cover background graphics next to lines 13-14
-    line_height = font_size + 2
-    # Calculate Y position for line 13 (accounting for spacing after lines 8-12)
-    line_13_y = y - (12 * line_height) - 1 - 1 - 1 - 1 - 2  # 12 lines + extra spacing
-    box_width = 27
-    box_height = 25  # Height to cover lines 13-14
-
-    # Position box based on team side
-    if team_side == 'left':
-        # Team 1: box on the left side of roster
-        box_x = x - 36
-    else:
-        # Team 2: box on the right side of roster
-        box_x = x + 157
-
-    # Draw white filled rectangle with no border
-    can.setFillColorRGB(1, 1, 1)  # White
-    can.setStrokeColorRGB(1, 1, 1)  # White border
-    can.rect(box_x, line_13_y - box_height + line_height, box_width, box_height, fill=1, stroke=0)
-
-    # Reset color for text
-    can.setFillColorRGB(0, 0, 0)  # Black
+    fix_libero_info(can, x, y, font_size, team_side)
 
     # Starting Y position (PDF coordinates are from bottom)
     current_y = y
@@ -272,6 +245,51 @@ def create_player_overlay(page_width, page_height, team_name, team_class, player
     packet.seek(0)
     return packet
 
+def fix_libero_info(can, x, y, font_size, team_side):
+    """
+    Adds a white box to cover "Libero" labels next to lines 13-14 and
+    replace "Lisens" column header with "Libero".
+
+    Args:
+        can: Canvas object to draw on
+        x: Current X coordinate on canvas
+        y: Current Y coordinate on canvas (starting point for player list)
+        font_size: Font size for text
+        team_side: 'left' for team 1 or 'right' for team 2 (determines white box position)
+
+    """
+    can.setFillColorRGB(1, 1, 1)  # White background
+    can.setStrokeColorRGB(1, 1, 1)  # White border
+
+    # Draw white box to cover "Libero" labels next to lines 13-14.
+    # =====
+    line_height = font_size + 2
+    # Calculate Y position for line 13 (accounting for spacing after lines 8-12)
+    line_13_y = y - (12 * line_height) - 1 - 1 - 1 - 1 - 2  # 12 lines + extra spacing
+    box_height = 25  # Height to cover lines 13-14
+    box_width = 27   # Width to cover the area next to line 13-14
+
+    # Position box based on team side
+    if team_side == 'left':
+        # Team 1: box on the left side of roster
+        box_x = x - 36
+    else:
+        # Team 2: box on the right side of roster
+        box_x = x + 158
+
+    can.rect(box_x, line_13_y - box_height + line_height, box_width, box_height, fill=1, stroke=1)
+
+    # Draw "Libero" box above roster hiding pre-printed "Lisens" column header.
+    # =====
+    box_height = 8
+    box_width = 22
+    box_x = x + 12
+    box_y = y + 9 # Position above the roster
+
+    can.rect(box_x, box_y, box_width, box_height, fill=1, stroke=1)
+
+    can.setFillColorRGB(0, 0, 0)
+    can.drawString(box_x, box_y, "Libero")
 
 def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info):
     """
@@ -334,8 +352,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
             # Always create overlay for team 1 (includes white boxes even if no players)
             overlay_packet = create_player_overlay(
-                page_width, page_height,
-                team1_name, team1_class, players_team1,
+                page_width, page_height, players_team1,
                 team1_coords['x'], team1_coords['y'],
                 team_side='left'
             )
@@ -360,8 +377,7 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
 
             # Always create overlay for team 2 (includes white boxes even if no players)
             overlay_packet = create_player_overlay(
-                page_width, page_height,
-                team2_name, team2_class, players_team2,
+                page_width, page_height, players_team2,
                 team2_coords['x'], team2_coords['y'],
                 team_side='right'
             )
