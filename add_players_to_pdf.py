@@ -314,8 +314,8 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
         page_num = info[0]
         page_teams[page_num] = info[1:]  # Everything except page_num
 
-    skipped_teams = []
-    processed_teams = 0
+    skipped_rosters = []
+    processed_rosters = 0
     pages_without_matches = []
 
     # Process each page
@@ -344,11 +344,11 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
                         f"  Page {page_num + 1}: WARNING: {team1_name} ({team1_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping player names for this team.")
-                    skipped_teams.append(f"{team1_name} ({team1_class})")
+                    skipped_rosters.append(f"{team1_name} ({team1_class})")
                     players_team1 = []  # Empty list, but still draw white boxes
                 else:
                     players_team1 = players
-                    processed_teams += 1
+                    processed_rosters += 1
 
             # Always create overlay for team 1 (includes white boxes even if no players)
             overlay_packet = create_player_overlay(
@@ -369,11 +369,11 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
                 if len(players) > MAX_PLAYERS_PER_TEAM:
                     print(
                         f"  Page {page_num + 1}: WARNING: {team2_name} ({team2_class}) has {len(players)} players (max {MAX_PLAYERS_PER_TEAM}). Skipping player names for this team.")
-                    skipped_teams.append(f"{team2_name} ({team2_class})")
+                    skipped_rosters.append(f"{team2_name} ({team2_class})")
                     players_team2 = []  # Empty list, but still draw white boxes
                 else:
                     players_team2 = players
-                    processed_teams += 1
+                    processed_rosters += 1
 
             # Always create overlay for team 2 (includes white boxes even if no players)
             overlay_packet = create_player_overlay(
@@ -400,8 +400,8 @@ def add_players_to_pdf(input_pdf, output_pdf, player_data, case_map, teams_info)
         writer.write(output_file)
 
     print(f"\nProcessing complete!")
-    print(f"  Teams processed: {processed_teams}")
-    print(f"  Teams skipped (>{MAX_PLAYERS_PER_TEAM} players): {len(skipped_teams)}")
+    print(f"  Rosters processed: {processed_rosters}")
+    print(f"  Rosters skipped (>{MAX_PLAYERS_PER_TEAM} players): {len(skipped_rosters)}")
 
     if pages_without_matches:
         print(f"\nPages without matching teams in Excel:")
