@@ -1,4 +1,4 @@
-# PDF Player List Generator for Profixio scoresheet
+# Rosters generator for Profixio scoresheets
 
 This script adds player rosters to tournament scoresheet PDFs (exported from Profixio).
 It reads player data from an Excel file with players (export from Profixio) and overlays the player lists onto the PDF at specified positions.
@@ -19,7 +19,7 @@ Commands below can be pasted into PowerShell.
 
 1. Install Python. On Linux use your package manager, on Windows use [Python Install Manager](https://apps.microsoft.com/detail/9nq7512cxl7t).
 2. Downloed the latest release of the script from the [release page](https://github.com/nvbf/profixio-scoresheet-add-roster/releases).
-3. Unpack the release and enter the new directory from your command line application.
+3. Unpack the release and enter the new "release" directory from your command line application.
 4. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
@@ -32,7 +32,7 @@ pip install -r requirements.txt
 - Scoresheet (PDF): Export from "Resultatregistrering", choose "Konkurranseskjema 3setts" (and save as "kampskjema.pdf" in stead of the default ""kampkort").
 - Players spreadsheet (EXcel): Export from "Spillere"
 
-For convenience place the files in the same folder as the Python 
+For convenience place the files in the "release" folder above. 
 
 You need to have access to the tournament (and have logged in) to export these files.
 
