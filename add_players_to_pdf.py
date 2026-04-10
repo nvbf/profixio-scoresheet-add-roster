@@ -57,6 +57,7 @@ def load_player_data(excel_path):
 
     # Group players by (Team, Class)
     player_dict = defaultdict(list)
+    classes = set()
 
     for _, row in df.iterrows():
         if str(row[role_col]).strip().lower() != 'spiller':
@@ -64,6 +65,7 @@ def load_player_data(excel_path):
 
         team = str(row[team_col]).strip()
         class_name = str(row[class_col]).strip()
+
 
         # Convert number to int, handling various formats
         try:
@@ -76,6 +78,7 @@ def load_player_data(excel_path):
 
         key = (team, class_name)
         player_dict[key].append((number, name, surname))
+        classes.add(class_name)
 
     # Sort players by number within each team
     for key in player_dict:
@@ -89,7 +92,8 @@ def load_player_data(excel_path):
         case_insensitive_map[lower_key] = (team, class_name)
 
     print(f"Loaded {len(player_dict)} teams with player data")
-    return dict(player_dict), case_insensitive_map
+    print(f"Found classes: {', '.join(sorted(classes))}")
+    return dict(player_dict), case_insensitive_map, classes
 
 
 def normalize_text(text):
@@ -108,7 +112,7 @@ def normalize_text(text):
     return text
 
 
-def extract_team_info_from_pdf(pdf_path):
+def extract_team_info_from_pdf(pdf_path, classes):
     """
     Extract team names and their positions from the PDF.
 
@@ -172,19 +176,15 @@ def extract_team_info_from_pdf(pdf_path):
                     print(f"  Page {page_num + 1}: Could not extract both team names")
                     continue
 
-                # Find class designation (GU15 or JU15)
+                # Find class designation
                 team_class = None
                 for word in words:
-                    if 'GU15' in word['text']:
-                        team_class = 'GU15'
-                        break
-                    elif 'JU15' in word['text']:
-                        team_class = 'JU15'
+                    if word['text'] in classes:
+                        team_class = word['text']
                         break
 
-                # Keep the class as-is (GU15 or JU15 to match Excel)
                 if team_class is None:
-                    print(f"  Page {page_num + 1}: Could not identify class")
+                    print(f"  Page {page_num + 1}: Found no matching class designation for teams")
                     continue
 
                 # Calculate positions for player lists
@@ -477,10 +477,10 @@ def main():
 
     try:
         # Step 1: Load player data
-        player_data, case_map = load_player_data(str(input_excel))
+        player_data, case_map, classes = load_player_data(str(input_excel))
 
         # Step 2: Extract team information from PDF
-        teams_info = extract_team_info_from_pdf(str(input_pdf))
+        teams_info = extract_team_info_from_pdf(str(input_pdf), classes)
 
         if not teams_info:
             print("\nERROR: No team information could be extracted from PDF.")
