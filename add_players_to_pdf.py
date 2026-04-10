@@ -39,9 +39,9 @@ def load_player_data(excel_path):
     df = pd.read_excel(excel_path)
 
     if 'Surname' in df.columns:
-        required_cols = ['Team', 'Class', 'Number', 'Name', 'Surname']
+        required_cols = ['Team', 'Class', 'Number', 'Name', 'Surname', 'Rolle']
     else:
-        required_cols = ['Sp lag', 'Klasse', 'Draktnr', 'Fornavn', 'Etternavn']
+        required_cols = ['Sp lag', 'Klasse', 'Draktnr', 'Fornavn', 'Etternavn', 'Rolle']
 
     # Verify expected columns exist
     missing_cols = [col for col in required_cols if col not in df.columns]
@@ -53,11 +53,15 @@ def load_player_data(excel_path):
     number_col = required_cols[2]
     name_col = required_cols[3]
     surname_col = required_cols[4]
+    role_col = required_cols[5]
 
     # Group players by (Team, Class)
     player_dict = defaultdict(list)
 
     for _, row in df.iterrows():
+        if str(row[role_col]).strip().lower() != 'spiller':
+            continue  # Skip non-player roles
+
         team = str(row[team_col]).strip()
         class_name = str(row[class_col]).strip()
 
