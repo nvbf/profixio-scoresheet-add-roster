@@ -38,27 +38,37 @@ def load_player_data(excel_path):
     print(f"Loading player data from {excel_path}...")
     df = pd.read_excel(excel_path)
 
+    if 'Surname' in df.columns:
+        required_cols = ['Team', 'Class', 'Number', 'Name', 'Surname']
+    else:
+        required_cols = ['Sp lag', 'Klasse', 'Draktnr', 'Fornavn', 'Etternavn']
+
     # Verify expected columns exist
-    required_cols = ['Team', 'Class', 'Number', 'Name', 'Surname']
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing required columns in Excel file: {missing_cols}")
+
+    team_col = required_cols[0]
+    class_col = required_cols[1]
+    number_col = required_cols[2]
+    name_col = required_cols[3]
+    surname_col = required_cols[4]
 
     # Group players by (Team, Class)
     player_dict = defaultdict(list)
 
     for _, row in df.iterrows():
-        team = str(row['Team']).strip()
-        class_name = str(row['Class']).strip()
+        team = str(row[team_col]).strip()
+        class_name = str(row[class_col]).strip()
 
         # Convert number to int, handling various formats
         try:
-            number = int(float(row['Number']))  # Handle both int and float strings
+            number = int(float(row[number_col]))  # Handle both int and float strings
         except (ValueError, TypeError):
             number = 0
 
-        name = str(row['Name']).strip()
-        surname = str(row['Surname']).strip()
+        name = str(row[name_col]).strip()
+        surname = str(row[surname_col]).strip()
 
         key = (team, class_name)
         player_dict[key].append((number, name, surname))
